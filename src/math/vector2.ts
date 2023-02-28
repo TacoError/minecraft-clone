@@ -25,4 +25,8 @@ export default class Vector2 {
         this.z = z;
     }
 
+    toString() : string {
+        return `${this.x}:${this.z}`;
+    }
+
 };

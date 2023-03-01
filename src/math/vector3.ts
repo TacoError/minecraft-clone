@@ -40,4 +40,8 @@ export default class Vector3 {
         return `${this.x}:${this.y}:${this.z}`;
     }
 
+    toArray() : number[] {
+        return [this.x, this.y, this.z];
+    }
+
 };

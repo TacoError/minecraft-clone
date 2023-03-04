@@ -1,68 +1,6 @@
 import Vector3 from "../math/vector3";
 
-export interface VoxelSide {
-    sideOffset: Vector3;
-    vertices: number[][];
-}
-
 export default class Block {
-
-    static VOXEL_SIDES: {[name: string]: VoxelSide} = {
-        top: {
-            sideOffset: new Vector3(0, 1, 0),
-            vertices: [
-                [0, 1, 1, 1, 1],
-                [1, 1, 1, 0, 1],
-                [0, 1, 0, 1, 0],
-                [1, 1, 0, 0, 0]
-            ]
-        },
-        bottom: {
-            sideOffset: new Vector3(0, -1, 0),
-            vertices: [
-                [1, 0, 1, 1, 0],
-                [0, 0, 1, 0, 0],
-                [1, 0, 0, 1, 1],
-                [0, 0, 0, 0, 1]
-            ]
-        },
-        back: {
-            sideOffset: new Vector3(0, 0, -1),
-            vertices: [
-                [1, 0, 0, 0, 0],
-                [0, 0, 0, 1, 0],
-                [1, 1, 0, 0, 1],
-                [0, 1, 0, 1, 1]
-            ]
-        },
-        front: {
-            sideOffset: new Vector3(0, 0, 1),
-            vertices: [
-                [0, 0, 1, 0, 0],
-                [1, 0, 1, 0, 0],
-                [0, 1, 1, 0, 1],
-                [1, 1, 1, 1, 1]
-            ]
-        },
-        right: {
-            sideOffset: new Vector3(1, 0, 0),
-            vertices: [
-                [1, 1, 1, 0, 1],
-                [1, 0, 1, 0, 0],
-                [1, 1, 0, 1, 1],
-                [1, 0, 0, 1, 0]
-            ]
-        },
-        left: {
-            sideOffset: new Vector3(-1, 0, 0),
-            vertices: [
-                [0, 1, 0, 0, 1],
-                [0, 0, 0, 0, 0],
-                [0, 1, 1, 1, 1],
-                [0, 0, 1, 1, 0]
-            ]
-        }
-    };
 
     private id: number;
 
@@ -72,11 +10,17 @@ export default class Block {
 
     private height: number;
 
-    constructor(id: number, name: string, width: number, height: number) {
+    private geometry: THREE.BoxGeometry;
+    
+    private material: THREE.Material | THREE.Material[];
+
+    constructor(id: number, name: string, width: number, height: number, geometry: THREE.BoxGeometry, material: THREE.Material | THREE.Material[]) {
         this.id = id;
         this.name = name;
         this.width = width;
         this.height = height;
+        this.geometry = geometry;
+        this.material = material;
     }
 
     getID() : number {
@@ -93,6 +37,14 @@ export default class Block {
 
     getHeight() : number {
         return this.height;
+    }
+
+    getGeometry() : THREE.BoxGeometry {
+        return this.geometry;
+    }
+
+    getMaterial() : THREE.Material | THREE.Material[] {
+        return this.material;
     }
 
 };

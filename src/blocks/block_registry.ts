@@ -1,4 +1,6 @@
 import Block from "./block";
+import * as THREE from "three";
+import TextureLoader from "../utils/textures";
 
 export default class BlockRegistry {
 
@@ -10,8 +12,8 @@ export default class BlockRegistry {
 
     static initialize() : void {
         this.blocks = [];
-        this.blocks.push(new Block(0, "Grass", 1, 1));
-        this.blocks.push(new Block(1, "dirt", 1, 1));
+        const defaultBlockGeometry: THREE.BoxGeometry = new THREE.BoxGeometry(1, 1, 1);
+        this.blocks.push(new Block(0, "Grass", 1, 1, defaultBlockGeometry, TextureLoader.getTexture("Grass")));
 
         this.blockIDMap = new Map(this.blocks.map(block => [block.getID(), block]));
         this.blockNameMap = new Map(this.blocks.map(block => [block.getName(), block]));

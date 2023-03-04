@@ -1,6 +1,6 @@
 import Vector3 from "../math/vector3";
 import Vector2 from "../math/vector2";
-import Block, {VoxelSide} from "../blocks/block";
+import Block from "../blocks/block";
 import * as THREE from "three";
 
 export default class Chunk {
@@ -49,7 +49,7 @@ export default class Chunk {
 
     removeBlock(position: Vector3) : void {
         if (!this.isInBounds(position)) {
-            throw new Error(`Position out of bounds. ${position.toString()}`);
+            throw new Error(`Position out of chunk bounds. ${position.toString()}`);
         }
         this.blocks.delete(position.toString());
     }
@@ -58,44 +58,63 @@ export default class Chunk {
         return this.position;
     }
 
-    // Culled mesher, takes the chunk and makes a mesh out of blocks that are visible.
-    mesh() : THREE.Mesh {
-        const positions: number[] = [];
-        const normals: number[] = [];
-        const indices: number[] = [];
-        const uvs: number[] = [];
-        let block: Block | undefined;
-        let sidePosition: Vector3;
-        let blockPosition: Vector3;
-        let index: number;
-        for (let x: number = 0; x <= Chunk.CHUNK_SIZE; x++) {
-            for (let y: number = 0; y <= Chunk.MAX_HEIGHT; y++) {
-                for (let z: number = 0; z <= Chunk.CHUNK_SIZE; z++) {
-                    blockPosition = new Vector3(x, y, z);
-                    if (!this.isBlockAt(blockPosition)) {
-                        continue;
-                    }
-                    block = this.getBlock(blockPosition);
-                    for (const side of Object.values(Block.VOXEL_SIDES)) {
-                        sidePosition = new Vector3(x + side.sideOffset.getX(), y + side.sideOffset.getY(), z + side.sideOffset.getZ());
-                        if (this.isInBounds(sidePosition) && this.isBlockAt(sidePosition)) {
-                            continue;
-                        }
-                        for (const vertice of side.vertices) {
-                            positions.push(x + vertice[0], y + vertice[1], z + vertice[2]);
-                            normals.push(...side.sideOffset.toArray());
-                        }
-                        index = positions.length / 3;
-                        indices.push(index, index + 1, index + 2, index + 2, index + 1, index + 3);
-                    }
-                }
+    isFullySurrounded(position: Vector3) : boolean {
+        const x: number = position.getX();
+        const y: number = position.getY();
+        const z: number = position.getZ();
+        return this.isBlockAt(new Vector3(x + 1, y, z)) &&
+        this.isBlockAt(new Vector3(x - 1, y, z)) &&
+        this.isBlockAt(new Vector3(z + 1, y, z)) &&
+        this.isBlockAt(new Vector3(z - 1, y, z)) &&
+        this.isBlockAt(new Vector3(x, y + 1, z)) &&
+        this.isBlockAt(new Vector3(x, y - 1, z));
+    }
+
+    // Creates seperate instance meshes for every block.
+    addToScene(scene: THREE.Scene) : void {
+        // dummy matrix used for setting positin of individual blocks
+        const holderMatrix: THREE.Object3D = new THREE.Object3D();
+        const chunkToWorldX = this.position.getX() << Chunk.CHUNK_SIZE_ROOT;
+        const chunkToWorldZ = this.position.getZ() << Chunk.CHUNK_SIZE_ROOT;
+        // to be set with every instanced mesh
+        const visibleBlocks: Map<Vector3, Block> = new Map();
+        let blockPosHolder: Vector3;
+        this.blocks.forEach((block: Block, position: string) => {
+            blockPosHolder = Vector3.fromString(position);
+            if (this.isFullySurrounded(blockPosHolder)) {
+                return;
             }
+            visibleBlocks.set(blockPosHolder, block);
+        });
+        const maxBlocks: number = Array.from(visibleBlocks.values()).length;
+        const instancedMeshes: Map<string, THREE.InstancedMesh> = new Map();
+        // holds the amount of blocks in every instanced mesh (key is block name)
+        const currentBlocksInMesh: Map<string, number> = new Map();
+        let blocksInMeshHolder: number;
+        visibleBlocks.forEach((block: Block, blockPosition: Vector3) => {
+            if (!instancedMeshes.has(block.getName())) {
+                instancedMeshes.set(block.getName(), new THREE.InstancedMesh(block.getGeometry(), block.getMaterial(), maxBlocks));
+                currentBlocksInMesh.set(block.getName(), 0);
+            }
+            // should never be udf, because is set above if it doesn't exist yet
+            blocksInMeshHolder = currentBlocksInMesh.get(block.getName()) as number;
+            holderMatrix.position.set(
+                blockPosition.getX() + chunkToWorldX,
+                blockPosition.getY(),
+                blockPosition.getZ() + chunkToWorldZ
+            );
+            holderMatrix.updateMatrix();
+            // should also never be udf
+            instancedMeshes.get(block.getName())?.setMatrixAt(
+                blocksInMeshHolder,
+                holderMatrix.matrix,
+            );
+            currentBlocksInMesh.set(block.getName(), blocksInMeshHolder + 1);
+        });
+        for (const mesh of Array.from(instancedMeshes.values())) {
+            mesh.instanceMatrix.needsUpdate = true;
+            scene.add(mesh);
         }
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(positions), 3));
-        geometry.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(normals), 3));
-        geometry.setAttribute("uv", new THREE.BufferAttribute(new Float32Array(uvs), 2));
-        return new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({color: "#00FF00"}));
     }
 
 };

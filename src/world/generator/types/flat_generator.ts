@@ -12,7 +12,8 @@ export default class FlatGenerator extends Generator {
 
     generateChunk(chunk: Chunk) : void {
         const grass: Block = BlockRegistry.getBlockFromID(0);
-        const dirt: Block = BlockRegistry.getBlockFromID(1);
+        // havent implemented dirt yet, so this is also just grass
+        const dirt: Block = BlockRegistry.getBlockFromID(0);
         for (let x: number = 0; x <= Chunk.CHUNK_SIZE; x++) {
             for (let z: number = 0; z <= Chunk.CHUNK_SIZE; z++) {
                 chunk.setBlock(new Vector3(x, 6, z), grass);

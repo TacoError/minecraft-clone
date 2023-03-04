@@ -44,4 +44,9 @@ export default class Vector3 {
         return [this.x, this.y, this.z];
     }
 
+    static fromString(position: string) : Vector3 {
+        const split: number[] = position.split(":").map(value => parseInt(value));
+        return new Vector3(split[0], split[1], split[2]);
+    }
+
 };
